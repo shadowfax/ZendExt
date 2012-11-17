@@ -22,6 +22,7 @@ class ZendExt_Application_Module_Bootstrap extends Zend_Application_Module_Boots
 		$this->init();
     }
 
+    
     /**
      * Initialize
      *
@@ -30,8 +31,57 @@ class ZendExt_Application_Module_Bootstrap extends Zend_Application_Module_Boots
 	public function init()
 	{
 		$this->_loadModuleConfig();
+		
+		// Layout must be set as global option for plugins to work
+		$resources = $this->getOption('resources');
+		if (is_array($resources)) {
+			$resources = array_change_key_case($resources, CASE_LOWER);
+			if (isset($resources['layout'])) {
+				$app = $this->getApplication();
+				$app->setOptions(
+					array(
+						strtolower($this->getModuleName()) => array(
+							'resources' => array(
+								'layout'	=> array_change_key_case($resources['layout'], CASE_LOWER)
+							)
+						)
+					)
+				);
+			}
+		}
 	}
 	
+	/**
+     * Ensure resource loader is loaded
+     *
+     * @return void
+     */
+    public function initResourceLoader()
+    {
+    	$moduleLoader = parent::initResourceLoader();
+    	
+    	if ($moduleLoader === null) {
+    		$r    = new ReflectionClass($this);
+            $path = $r->getFileName();
+            $moduleLoader = new Zend_Application_Module_Autoloader(array(
+                'namespace' => $this->getModuleName(),
+                'basePath'  => dirname($path),
+            ));
+            
+            $this->setResourceLoader($moduleLoader);
+    	}
+    	
+    	// Add plugin resources ...
+        $moduleLoader->addResourceTypes(array(  
+			'plugins' => array(  
+				'path' 		=> 'controllers/plugins',  
+				'namespace'	=> 'Controller_Plugin'  
+			)  
+		));
+		
+		return $moduleLoader;
+    }
+    
 	/**
      * Load the module's config
      * 
