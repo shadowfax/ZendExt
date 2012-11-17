@@ -929,8 +929,7 @@ class ZendExt_Mime
 			'ice'			=> 'x-conference/x-cooltalk', 	
 		);
         
-		$file_parts = explode('.', $filename);
-        $ext = strtolower(array_pop($file_parts));
+        $ext = pathinfo(basename($filename), PATHINFO_EXTENSION);
 		if (array_key_exists($ext, $mime_types)) {
 			$mimetype = $mime_types[$ext];
         }
